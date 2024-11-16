@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 
-	client "github.com/porjo/upgo"
+	client "github.com/porjo/upgo/oapi"
 )
 
 func main() {
