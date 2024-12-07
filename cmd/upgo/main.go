@@ -15,18 +15,20 @@ func main() {
 		log.Fatal(err)
 	}
 
-	resp, err := c.GetAccounts(context.TODO())
+	accounts, err := c.GetAccounts(context.TODO())
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("resp %+v\n", resp)
+	fmt.Printf("accounts %+v\n", accounts)
 
-	trans, err := c.GetTransactions(context.TODO(), "d63c429b-3538-46c0-bafb-2a26d0f34029")
-	if err != nil {
-		log.Fatal(err)
+	for _, a := range accounts {
+		trans, err := c.GetTransactions(context.TODO(), a.Id)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Printf("trans %+v\n", trans)
 	}
-
-	fmt.Printf("trans %+v\n", trans)
 
 }
