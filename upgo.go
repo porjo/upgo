@@ -10,6 +10,7 @@ import (
 	"os"
 
 	"github.com/porjo/upgo/oapi"
+	"golang.org/x/oauth2"
 )
 
 const (
@@ -18,7 +19,7 @@ const (
 )
 
 type Client struct {
-	client   http.Client
+	client   *http.Client
 	upClient *oapi.ClientWithResponses
 }
 
@@ -32,12 +33,16 @@ func NewClient() (*Client, error) {
 	var err error
 	c := &Client{}
 
-	c.client = http.Client{}
-	wh := getRTWithHeader(c.client.Transport)
-	wh.Set("Authorization", "Bearer "+token)
-	c.client.Transport = wh
+	// setting bearer token via roundtripper is a bit tricky
+	// let oauth2 package take care of that for us
+	// see: https://stackoverflow.com/a/51326483/202311
+	ctx := context.Background()
+	c.client = oauth2.NewClient(ctx, oauth2.StaticTokenSource(&oauth2.Token{
+		AccessToken: token,
+		TokenType:   "Bearer",
+	}))
 
-	c.upClient, err = oapi.NewClientWithResponses(ServerURL, oapi.WithHTTPClient(&c.client))
+	c.upClient, err = oapi.NewClientWithResponses(ServerURL, oapi.WithHTTPClient(c.client))
 	if err != nil {
 		return nil, fmt.Errorf("error getting client: %w", err)
 	}
@@ -62,36 +67,6 @@ func (c *Client) GetAccounts(ctx context.Context) ([]oapi.AccountResource, error
 	return resp.JSON200.Data, nil
 }
 
-/*
-func (c *Client) GetTransactions(ctx context.Context, accountID string) ([]oapi.TransactionResource, error) {
-	resp, err := c.upClient.GetTransactionsWithResponse(ctx, &oapi.GetTransactionsParams{})
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf("error getting transactions. Expected HTTP 200 but received %d", resp.StatusCode())
-	}
-
-	if resp.JSON200 == nil {
-		return []oapi.TransactionResource{}, nil
-	}
-
-	transactions := resp.JSON200.Data
-
-	if resp.JSON200.Links.Next != nil {
-		t, err := c.getTransactions(ctx, *resp.JSON200.Links.Next)
-		if err != nil {
-			return nil, err
-		}
-
-		transactions = append(transactions, t...)
-
-	}
-
-	return transactions, nil
-}
-*/
-
 func (c *Client) GetTransactions(ctx context.Context, accountID string) ([]oapi.TransactionResource, error) {
 
 	var tpl bytes.Buffer
@@ -113,6 +88,11 @@ func (c *Client) getTransactions(ctx context.Context, url string) ([]oapi.Transa
 	if err != nil {
 		return nil, err
 	}
+
+	// get all results in a single request (page)
+	q := req.URL.Query()
+	q.Add("page[size]", "1")
+	req.URL.RawQuery = q.Encode()
 
 	r, err := c.client.Do(req)
 	if err != nil {
