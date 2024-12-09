@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"log/slog"
 	"net/http"
 	"os"
 
@@ -35,6 +36,20 @@ const (
 type Client struct {
 	client   *http.Client
 	upClient *oapi.ClientWithResponses
+
+	logger *slog.Logger
+}
+
+func NewClientWithLogger(logger *slog.Logger) (*Client, error) {
+	c, err := NewClient()
+	if err != nil {
+		return nil, err
+	}
+
+	c.logger = logger
+
+	return c, nil
+
 }
 
 func NewClient() (*Client, error) {
@@ -46,6 +61,13 @@ func NewClient() (*Client, error) {
 
 	var err error
 	c := &Client{}
+
+	lvl := new(slog.LevelVar)
+	lvl.Set(slog.LevelInfo)
+
+	c.logger = slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+		Level: lvl,
+	}))
 
 	// setting bearer token via roundtripper is a bit tricky
 	// let oauth2 package take care of that for us
@@ -70,6 +92,7 @@ func NewClient() (*Client, error) {
 }
 
 func (c *Client) GetAccounts(ctx context.Context) ([]oapi.AccountResource, error) {
+	c.logger.Info("GetAccounts")
 	resp, err := c.upClient.GetAccountsWithResponse(ctx, &oapi.GetAccountsParams{})
 	if err != nil {
 		return nil, err
@@ -93,6 +116,8 @@ func (c *Client) GetTransactions(ctx context.Context, accountID string) ([]oapi.
 		return nil, err
 	}
 
+	c.logger.Info("GetTransactions", "accountID", accountID)
+
 	return c.getTransactions(ctx, tpl.String())
 }
 
@@ -102,11 +127,6 @@ func (c *Client) getTransactions(ctx context.Context, url string) ([]oapi.Transa
 	if err != nil {
 		return nil, err
 	}
-
-	// get all results in a single request (page)
-	q := req.URL.Query()
-	q.Add("page[size]", "1")
-	req.URL.RawQuery = q.Encode()
 
 	r, err := c.client.Do(req)
 	if err != nil {
@@ -121,6 +141,8 @@ func (c *Client) getTransactions(ctx context.Context, url string) ([]oapi.Transa
 	}
 
 	transactions := ltr.Data
+
+	c.logger.Debug("getTransactions", "url", url, "transaction_count", len(transactions))
 
 	if ltr.Links.Next != nil {
 		t, err := c.getTransactions(ctx, *ltr.Links.Next)

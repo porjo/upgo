@@ -2,15 +2,22 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
+	"log/slog"
+	"os"
 
 	"github.com/porjo/upgo"
 )
 
 func main() {
+	lvl := new(slog.LevelVar)
+	lvl.Set(slog.LevelDebug)
 
-	c, err := upgo.NewClient()
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+		Level: lvl,
+	}))
+
+	c, err := upgo.NewClientWithLogger(logger)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -20,7 +27,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("accounts %+v\n", accounts)
+	slog.Info("accounts", "accounts", accounts)
 
 	for _, a := range accounts {
 		trans, err := c.GetTransactions(context.TODO(), a.Id)
@@ -28,7 +35,7 @@ func main() {
 			log.Fatal(err)
 		}
 
-		fmt.Printf("trans %+v\n", trans)
+		slog.Info("transactions", "transactions", trans)
 	}
 
 }
