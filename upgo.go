@@ -40,6 +40,7 @@ type Client struct {
 	logger *slog.Logger
 }
 
+// NewClientWithLogger is a wrapper for [NewClient] and takes a custom logger.
 func NewClientWithLogger(logger *slog.Logger) (*Client, error) {
 	c, err := NewClient()
 	if err != nil {
@@ -52,6 +53,9 @@ func NewClientWithLogger(logger *slog.Logger) (*Client, error) {
 
 }
 
+// NewClient returns a Client
+// It expects environment variable 'API_TOKEN' to be set.
+// It will use a default [slog.Logger] log handler. Use [NewClientWithLogger] to pass in your own log handler.
 func NewClient() (*Client, error) {
 
 	token, ok := os.LookupEnv("API_TOKEN")
