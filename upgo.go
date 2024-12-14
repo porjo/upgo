@@ -23,6 +23,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/porjo/upgo/oapi"
 	"golang.org/x/oauth2"
@@ -76,8 +77,7 @@ func NewClient() (*Client, error) {
 	// setting bearer token via roundtripper is a bit tricky
 	// let oauth2 package take care of that for us
 	// see: https://stackoverflow.com/a/51326483/202311
-	ctx := context.Background()
-	c.client = oauth2.NewClient(ctx, oauth2.StaticTokenSource(&oauth2.Token{
+	c.client = oauth2.NewClient(context.Background(), oauth2.StaticTokenSource(&oauth2.Token{
 		AccessToken: token,
 		TokenType:   "Bearer",
 	}))
@@ -87,7 +87,10 @@ func NewClient() (*Client, error) {
 		return nil, fmt.Errorf("error getting client: %w", err)
 	}
 
-	_, err = c.upClient.GetUtilPing(context.TODO())
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	_, err = c.upClient.GetUtilPing(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("error pinging API: %w", err)
 	}

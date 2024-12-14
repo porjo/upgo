@@ -2,7 +2,7 @@
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/porjo/upgo.svg)](https://pkg.go.dev/github.com/porjo/upgo)
 
-Upgo is a API client library for Up Bank Australia written in Go. Upgo provides these methods:
+Upgo is a API client library for [Up Bank Australia](https://developer.up.com.au/) written in Go. Upgo provides these methods:
 
 - `GetAccounts`
 - `GetTransactions`
