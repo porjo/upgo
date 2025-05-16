@@ -30,7 +30,15 @@ func main() {
 		Level: lvl,
 	}))
 
-	c, err := upgo.NewClientWithLogger(logger)
+	token, ok := os.LookupEnv("API_TOKEN")
+	if !ok {
+		log.Fatal("environment variable API_TOKEN not set")
+	}
+
+	c, err := upgo.NewClient(
+		upgo.WithLogger(logger),
+		upgo.WithToken(token),
+	)
 	if err != nil {
 		log.Fatal(err)
 	}

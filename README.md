@@ -11,4 +11,4 @@ Upgo is a minimal wrapper around the complete API generated from the OpenAPI spe
 
 ## Usage
 
-See example utility [./cmd/upgo/main.go](cmd/upgo/main.go)
+See example utility [./cmd/upgo/main.go](cmd/upgo/main.go).

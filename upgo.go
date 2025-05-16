@@ -38,31 +38,28 @@ type Client struct {
 	client   *http.Client
 	upClient *oapi.ClientWithResponses
 
+	token string
+
 	logger *slog.Logger
 }
 
-// NewClientWithLogger is a wrapper for [NewClient] and takes a custom logger.
-func NewClientWithLogger(logger *slog.Logger) (*Client, error) {
-	c, err := NewClient()
-	if err != nil {
-		return nil, err
+type ClientOption func(*Client)
+
+func WithLogger(logger *slog.Logger) ClientOption {
+	return func(c *Client) {
+		c.logger = logger
 	}
+}
 
-	c.logger = logger
-
-	return c, nil
-
+func WithToken(token string) ClientOption {
+	return func(c *Client) {
+		c.token = token
+	}
 }
 
 // NewClient returns a Client
-// It expects environment variable 'API_TOKEN' to be set.
-// It will use a default [slog.Logger] log handler. Use [NewClientWithLogger] to pass in your own log handler.
-func NewClient() (*Client, error) {
-
-	token, ok := os.LookupEnv("API_TOKEN")
-	if !ok {
-		return nil, fmt.Errorf("environment variable API_TOKEN not set")
-	}
+// It will use a default [slog.Logger] log handler unless overriden with [WithLogger]
+func NewClient(opts ...ClientOption) (*Client, error) {
 
 	var err error
 	c := &Client{}
@@ -74,11 +71,16 @@ func NewClient() (*Client, error) {
 		Level: lvl,
 	}))
 
+	// Apply each option
+	for _, opt := range opts {
+		opt(c)
+	}
+
 	// setting bearer token via roundtripper is a bit tricky
 	// let oauth2 package take care of that for us
 	// see: https://stackoverflow.com/a/51326483/202311
 	c.client = oauth2.NewClient(context.Background(), oauth2.StaticTokenSource(&oauth2.Token{
-		AccessToken: token,
+		AccessToken: c.token,
 		TokenType:   "Bearer",
 	}))
 
