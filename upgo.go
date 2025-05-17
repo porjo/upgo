@@ -15,11 +15,8 @@ limitations under the License.
 package upgo
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"html/template"
 	"log/slog"
 	"net/http"
 	"os"
@@ -30,8 +27,7 @@ import (
 )
 
 const (
-	ServerURL       = "https://api.up.com.au/api/v1"
-	TransactionsURL = ServerURL + "/accounts/{{ .accountID }}/transactions"
+	ServerURL = "https://api.up.com.au/api/v1"
 )
 
 type Client struct {
@@ -113,54 +109,16 @@ func (c *Client) GetAccounts(ctx context.Context) ([]oapi.AccountResource, error
 	return resp.JSON200.Data, nil
 }
 
-func (c *Client) GetTransactions(ctx context.Context, accountID string) ([]oapi.TransactionResource, error) {
-
-	var tpl bytes.Buffer
-
-	templ := template.Must(template.New("getTransactions").Parse(TransactionsURL))
-	err := templ.Execute(&tpl, map[string]interface{}{
-		"accountID": accountID,
-	})
+// GetTransactions returns transactions for all accounts, optionally filtered by [oapi.GetTransactionsParams].
+func (c *Client) GetTransactions(ctx context.Context, params *oapi.GetTransactionsParams) ([]oapi.TransactionResource, error) {
+	c.logger.Info("GetAccounts")
+	resp, err := c.upClient.GetTransactionsWithResponse(ctx, params)
 	if err != nil {
 		return nil, err
 	}
-
-	c.logger.Info("GetTransactions", "accountID", accountID)
-
-	return c.getTransactions(ctx, tpl.String())
-}
-
-func (c *Client) getTransactions(ctx context.Context, url string) ([]oapi.TransactionResource, error) {
-
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
-	if err != nil {
-		return nil, err
+	if resp.StatusCode() != http.StatusOK {
+		return nil, fmt.Errorf("error getting accounts. Expected HTTP 200 but received %d", resp.StatusCode())
 	}
 
-	r, err := c.client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer r.Body.Close()
-
-	ltr := &oapi.ListTransactionsResponse{}
-	err = json.NewDecoder(r.Body).Decode(ltr)
-	if err != nil {
-		return nil, err
-	}
-
-	transactions := ltr.Data
-
-	c.logger.Debug("getTransactions", "url", url, "transaction_count", len(transactions))
-
-	if ltr.Links.Next != nil {
-		t, err := c.getTransactions(ctx, *ltr.Links.Next)
-		if err != nil {
-			return nil, err
-		}
-		transactions = append(transactions, t...)
-	}
-
-	return transactions, nil
-
+	return resp.JSON200.Data, nil
 }

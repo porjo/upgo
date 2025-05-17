@@ -50,13 +50,11 @@ func main() {
 
 	slog.Info("accounts", "accounts", accounts)
 
-	for _, a := range accounts {
-		trans, err := c.GetTransactions(context.TODO(), a.Id)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		slog.Info("transactions", "transactions", trans)
+	trans, err := c.GetTransactions(context.TODO(), nil)
+	if err != nil {
+		log.Fatal(err)
 	}
+
+	slog.Info("transactions", "transactions", trans)
 
 }
