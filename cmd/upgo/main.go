@@ -15,6 +15,8 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"log"
 	"log/slog"
 	"os"
@@ -48,13 +50,23 @@ func main() {
 		log.Fatal(err)
 	}
 
-	slog.Info("accounts", "accounts", accounts)
+	fmt.Println("Accounts")
+	accountsJ, err := json.MarshalIndent(accounts, "", "  ")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("%s", string(accountsJ))
 
 	trans, err := c.GetTransactions(context.TODO(), nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	slog.Info("transactions", "transactions", trans)
+	fmt.Println("Transactions")
+	transJ, err := json.MarshalIndent(trans, "", "  ")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("%s", string(transJ))
 
 }

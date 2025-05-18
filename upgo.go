@@ -111,13 +111,13 @@ func (c *Client) GetAccounts(ctx context.Context) ([]oapi.AccountResource, error
 
 // GetTransactions returns transactions for all accounts, optionally filtered by [oapi.GetTransactionsParams].
 func (c *Client) GetTransactions(ctx context.Context, params *oapi.GetTransactionsParams) ([]oapi.TransactionResource, error) {
-	c.logger.Info("GetAccounts")
+	c.logger.Info("GetTransactions")
 	resp, err := c.upClient.GetTransactionsWithResponse(ctx, params)
 	if err != nil {
 		return nil, err
 	}
 	if resp.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf("error getting accounts. Expected HTTP 200 but received %d", resp.StatusCode())
+		return nil, fmt.Errorf("error getting transactions. Expected HTTP 200 but received %d", resp.StatusCode())
 	}
 
 	return resp.JSON200.Data, nil
