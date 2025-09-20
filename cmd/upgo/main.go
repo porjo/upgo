@@ -22,6 +22,7 @@ import (
 	"os"
 
 	"github.com/porjo/upgo"
+	"github.com/porjo/upgo/oapi"
 )
 
 func main() {
@@ -57,7 +58,10 @@ func main() {
 	}
 	fmt.Printf("%s", string(accountsJ))
 
-	trans, err := c.GetTransactions(context.TODO(), nil)
+	p := &oapi.GetTransactionsParams{
+		PageSize: 100,
+	}
+	trans, err := c.GetTransactions(context.TODO(), p)
 	if err != nil {
 		log.Fatal(err)
 	}
