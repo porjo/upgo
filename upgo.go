@@ -17,9 +17,9 @@ package upgo
 import (
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/porjo/upgo/oapi"
@@ -41,12 +41,15 @@ type Client struct {
 
 type ClientOption func(*Client)
 
+// WithLogger allows the user to define how log emitted by upgo will be handled.
+// Upgo does not emit log otherwise.
 func WithLogger(logger *slog.Logger) ClientOption {
 	return func(c *Client) {
 		c.logger = logger
 	}
 }
 
+// WithToken is used to supply an API auth token to upgo.
 func WithToken(token string) ClientOption {
 	return func(c *Client) {
 		c.token = token
@@ -60,12 +63,8 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	var err error
 	c := &Client{}
 
-	lvl := new(slog.LevelVar)
-	lvl.Set(slog.LevelInfo)
-
-	c.logger = slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
-		Level: lvl,
-	}))
+	// by default log is discarded
+	c.logger = slog.New(slog.NewTextHandler(io.Discard, nil))
 
 	// Apply each option
 	for _, opt := range opts {
