@@ -1,4 +1,4 @@
-package upgo
+package util
 
 import "sort"
 

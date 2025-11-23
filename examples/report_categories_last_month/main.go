@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/porjo/upgo"
+	"github.com/porjo/upgo/internal/util"
 	"github.com/porjo/upgo/oapi"
 )
 
@@ -97,7 +98,7 @@ func main() {
 
 	fmt.Printf("Category Totals\n")
 
-	sortedCats := upgo.SortMapByValue(categories)
+	sortedCats := util.SortMapByValue(categories)
 	for _, cat := range sortedCats {
 		amount := float64(cat.Value) / upgo.BaseUnitDivisor
 		fmt.Printf("%-30s : %.2f\n", cat.Key, amount)
