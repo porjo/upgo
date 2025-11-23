@@ -28,6 +28,8 @@ import (
 
 const (
 	ServerURL = "https://api.up.com.au/api/v1"
+
+	BaseUnitDivisor = 100 // amounts are in cents
 )
 
 type Client struct {
@@ -101,6 +103,9 @@ func (c *Client) GetAccounts(ctx context.Context) ([]oapi.AccountResource, error
 	if err != nil {
 		return nil, err
 	}
+	if resp == nil || resp.JSON200 == nil {
+		return nil, fmt.Errorf("error getting accounts: response is nil")
+	}
 	if resp.StatusCode() != http.StatusOK {
 		return nil, fmt.Errorf("error getting accounts. Expected HTTP 200 but received %d", resp.StatusCode())
 	}
@@ -115,6 +120,10 @@ func (c *Client) GetTransactions(ctx context.Context, params *oapi.GetTransactio
 	if err != nil {
 		return nil, err
 	}
+	if resp == nil || resp.JSON200 == nil {
+		return nil, fmt.Errorf("error getting transactions: response is nil")
+	}
+
 	if resp.StatusCode() != http.StatusOK {
 		return nil, fmt.Errorf("error getting transactions. Expected HTTP 200 but received %d", resp.StatusCode())
 	}
