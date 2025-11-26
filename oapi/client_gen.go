@@ -1,5 +1,3 @@
-//go:build tools
-
 /*
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -15,8 +13,4 @@ limitations under the License.
 */
 package oapi
 
-import (
-	_ "github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen"
-)
-
-//go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen -config cfg.yaml openapi.json
+//go:generate go tool oapi-codegen -config cfg.yaml openapi.json

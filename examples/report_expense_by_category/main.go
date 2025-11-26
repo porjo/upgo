@@ -87,7 +87,7 @@ func main() {
 		if catStr == "" {
 			catStr = "uncategorized"
 		}
-		categories[catStr] += int64(-value)
+		categories[catStr] += -value
 	}
 
 	fmt.Printf("Expense Category Totals\n")
