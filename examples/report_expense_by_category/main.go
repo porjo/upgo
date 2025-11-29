@@ -23,9 +23,15 @@ import (
 	"time"
 
 	"github.com/porjo/upgo"
-	"github.com/porjo/upgo/internal/util"
 	"github.com/porjo/upgo/oapi"
 )
+
+type payee struct {
+	Name  string
+	Total int64
+}
+
+type categories map[string][]payee
 
 func main() {
 	debug := flag.Bool("debug", false, "debug logging")
@@ -55,15 +61,17 @@ func main() {
 		log.Fatal(err)
 	}
 
-	filterSince := time.Now().AddDate(0, -1, 0)
+	filterSince := time.Now().AddDate(0, -3, 0)
 
+	pageSize := 100
 	transInput := &oapi.GetTransactionsParams{
 		FilterSince: &filterSince,
+		PageSize:    &pageSize,
 	}
 
 	slog.Info("Fetching transactions", "since", filterSince)
 
-	categories := make(map[string]int64)
+	r := make(categories)
 
 	trans, err := c.GetTransactions(context.TODO(), transInput)
 	if err != nil {
@@ -87,16 +95,48 @@ func main() {
 		if catStr == "" {
 			catStr = "uncategorized"
 		}
-		categories[catStr] += -value
+
+		if _, ok := r[catStr]; !ok {
+			r[catStr] = []payee{}
+		}
+
+		p := r[catStr]
+		found := false
+		for i, p := range p {
+			if p.Name == t.Attributes.Description {
+				p.Total += -value
+				r[catStr][i] = p
+				found = true
+				break
+			}
+		}
+		if !found {
+			r[catStr] = append(r[catStr], payee{
+				Name:  t.Attributes.Description,
+				Total: -value,
+			})
+		}
 	}
 
 	fmt.Printf("Expense Category Totals\n")
-	fmt.Printf("-------------------------------- ----------------\n")
+	fmt.Println()
 
-	sortedCats := util.SortMapByValue(categories)
-	for _, cat := range sortedCats {
-		amount := float64(cat.Value) / upgo.BaseUnitDivisor
-		fmt.Printf("%-30s : %.2f\n", cat.Key, amount)
+	for cat, payees := range r {
+		catStr := ""
+		total := int64(0)
+		for _, p := range payees {
+			amount := float64(p.Total) / upgo.BaseUnitDivisor
+			catStr += fmt.Sprintf("%-30s : %7.2f\n", p.Name, amount)
+			total += p.Total
+		}
+		amount := float64(total) / upgo.BaseUnitDivisor
+
+		fmt.Println(cat)
+		fmt.Printf("-------------------------------- ----------------\n")
+		fmt.Print(catStr)
+		fmt.Printf("-------------------------------- ----------------\n")
+		fmt.Printf("%30s : %7.2f\n", "total", amount)
+		fmt.Println()
 	}
 
 }
